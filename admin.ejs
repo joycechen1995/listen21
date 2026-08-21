@@ -16,7 +16,7 @@
           <td><%= c.name %></td>
           <td><%= c.join_code %></td>
           <td><%= c.coach_name || '尚未指派' %></td>
-          <td><%= c.parent_count %></td>
+          <td><a href="/admin/cohort/<%= c.id %>"><%= c.parent_count %></a></td>
         </tr>
       <% }); %>
     </table>

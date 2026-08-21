@@ -248,9 +248,9 @@ app.post("/parent/:id/checkin", requireRole("parent"), async (req, res) => {
 // ---------- wall (parent + coach + teacher) ----------
 async function cohortIdsFor(user) {
   if (user.role === "parent") return user.cohort_id ? [user.cohort_id] : [];
-  if (user.role === "coach") {
-    // 指導師 (chief instructor) oversees every cohort, regardless of which
-    // teacher it's assigned to.
+  if (user.role === "coach" || user.role === "admin") {
+    // 指導師 (chief instructor) and 系統管理員 both oversee every cohort,
+    // regardless of which teacher it's assigned to.
     const { rows } = await q("SELECT id FROM listen21_cohorts");
     return rows.map((r) => r.id);
   }
@@ -408,7 +408,7 @@ app.get("/coach", requireRole("coach", "teacher"), async (req, res) => {
   res.render("coach", { user: req.user, active: "coach", cohorts });
 });
 
-app.get("/coach/commitment/:id", requireRole("coach", "teacher"), async (req, res) => {
+app.get("/coach/commitment/:id", requireRole("coach", "teacher", "admin"), async (req, res) => {
   const { rows } = await q(
     `SELECT c.*, u.display_name AS parent_name, u.email AS parent_email, u.cohort_id
      FROM listen21_commitments c JOIN listen21_users u ON u.id = c.parent_id
@@ -466,6 +466,43 @@ app.get("/admin", requireRole("admin"), async (req, res) => {
      WHERE u.role IN ('coach','teacher') ORDER BY u.role, u.created_at;`
   );
   res.render("admin", { user: req.user, active: "admin", cohorts, coaches, flash: null, error: null });
+});
+
+app.get("/admin/cohort/:id", requireRole("admin"), async (req, res) => {
+  const { rows: cohortRows } = await q(
+    `SELECT co.*, u.display_name AS teacher_name
+     FROM listen21_cohorts co
+     LEFT JOIN listen21_users u ON u.id = co.coach_id
+     WHERE co.id=$1;`,
+    [req.params.id]
+  );
+  const cohort = cohortRows[0];
+  if (!cohort) return res.status(404).send("找不到這個期別");
+
+  const { rows: commitments } = await q(
+    `SELECT c.id, c.child_name, c.created_at, u.display_name AS parent_name,
+            (SELECT COUNT(*) FROM listen21_checkins ci WHERE ci.commitment_id=c.id)::int AS done_count
+     FROM listen21_commitments c JOIN listen21_users u ON u.id = c.parent_id
+     WHERE u.cohort_id=$1 ORDER BY c.created_at DESC;`,
+    [cohort.id]
+  );
+  cohort.commitments = commitments.map((c) => {
+    const nowDay = computeDay(c.created_at);
+    const expected = Math.min(Math.max(nowDay - 1, 0), TOTAL_DAYS);
+    return { ...c, stalled: c.done_count < expected };
+  });
+
+  const { rows: notStarted } = await q(
+    `SELECT u.id, u.display_name, u.email, u.created_at
+     FROM listen21_users u
+     WHERE u.cohort_id=$1 AND u.role='parent'
+       AND NOT EXISTS (SELECT 1 FROM listen21_commitments c WHERE c.parent_id = u.id)
+     ORDER BY u.created_at DESC;`,
+    [cohort.id]
+  );
+  cohort.notStarted = notStarted;
+
+  res.render("admin-cohort", { user: req.user, active: "admin", cohort });
 });
 
 app.post("/admin/cohort", requireRole("admin"), async (req, res) => {

@@ -1,0 +1,56 @@
+<%- include('_head', { title: cohort.name + ' 學員名單' }) %>
+<%- include('_nav', { user, active: 'admin' }) %>
+
+<p class="small muted" style="margin-bottom:10px;">
+  <a href="/admin">← 回到後台管理</a>
+</p>
+
+<div class="card">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+    <h1 style="font-size:1.2rem;"><%= cohort.name %></h1>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <span class="pill">負責人：<%= cohort.teacher_name || '尚未指派' %></span>
+      <span class="pill">邀請碼：<%= cohort.join_code %></span>
+    </div>
+  </div>
+
+  <% if (cohort.commitments.length === 0) { %>
+    <p class="small muted">這一期還沒有家長開始打卡。</p>
+  <% } else { %>
+    <div style="overflow-x:auto;">
+      <table class="plain">
+        <tr><th>家長</th><th>孩子</th><th>進度</th><th>狀態</th><th></th></tr>
+        <% cohort.commitments.forEach(function(c){ %>
+          <tr>
+            <td><%= c.parent_name %></td>
+            <td><%= c.child_name %></td>
+            <td><%= c.done_count %> / 21</td>
+            <td>
+              <% if (c.done_count >= 21) { %>
+                <span class="pill">已完成</span>
+              <% } else if (c.stalled) { %>
+                <span class="pill warn">超過1天沒打卡</span>
+              <% } else { %>
+                <span class="pill">進行中</span>
+              <% } %>
+            </td>
+            <td><a href="/coach/commitment/<%= c.id %>">查看內容 →</a></td>
+          </tr>
+        <% }); %>
+      </table>
+    </div>
+  <% } %>
+
+  <% if (cohort.notStarted.length > 0) { %>
+    <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+      <div class="small" style="font-weight:700; color:var(--ink-muted); margin-bottom:10px;">已註冊，尚未開始 21 天旅程</div>
+      <div class="pillrow" style="margin-bottom:0;">
+        <% cohort.notStarted.forEach(function(u){ %>
+          <span class="pill"><%= u.display_name %>（<%= u.email %>）</span>
+        <% }); %>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<%- include('_foot') %>

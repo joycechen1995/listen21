@@ -1,7 +1,13 @@
 <%- include('_head', { title: commitment.child_name + ' 的紀錄' }) %>
 <%- include('_nav', { user, active: 'coach' }) %>
 
-<p class="small muted" style="margin-bottom:10px;"><a href="/coach">← 學員總覽</a></p>
+<p class="small muted" style="margin-bottom:10px;">
+  <% if (user.role === 'admin') { %>
+    <a href="/admin/cohort/<%= commitment.cohort_id %>">← 回到期別學員名單</a>
+  <% } else { %>
+    <a href="/coach">← 學員總覽</a>
+  <% } %>
+</p>
 
 <div class="card">
   <div class="small muted" style="margin-bottom:4px;">家長</div>
