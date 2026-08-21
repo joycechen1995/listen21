@@ -10,7 +10,7 @@
   <h2 style="font-size:1rem; margin-bottom:14px;">期別</h2>
   <div style="overflow-x:auto; margin-bottom:18px;">
     <table class="plain">
-      <tr><th>期別</th><th>邀請碼</th><th>指導師</th><th>學員數</th></tr>
+      <tr><th>期別</th><th>邀請碼</th><th>負責人</th><th>學員數</th></tr>
       <% cohorts.forEach(function(c){ %>
         <tr>
           <td><%= c.name %></td>
@@ -31,18 +31,32 @@
 </div>
 
 <div class="card">
-  <h2 style="font-size:1rem; margin-bottom:14px;">指導師帳號</h2>
+  <h2 style="font-size:1rem; margin-bottom:14px;">指導師 / 老師帳號</h2>
+  <p class="small muted" style="margin-bottom:14px;">指導師可以看到底下所有老師負責的期別和家長；老師只看得到自己被指派的期別。</p>
   <div style="overflow-x:auto; margin-bottom:18px;">
     <table class="plain">
-      <tr><th>姓名</th><th>Email</th><th>負責期別</th></tr>
+      <tr><th>姓名</th><th>類型</th><th>Email</th><th>負責期別</th></tr>
       <% coaches.forEach(function(c){ %>
-        <tr><td><%= c.display_name %></td><td><%= c.email %></td><td><%= c.cohort_name || '尚未指派' %></td></tr>
+        <tr>
+          <td><%= c.display_name %></td>
+          <td><span class="pill<%= c.role === 'coach' ? ' warn' : '' %>"><%= c.role === 'coach' ? '指導師' : '老師' %></span></td>
+          <td><%= c.email %></td>
+          <td><%= c.cohort_name || '尚未指派' %></td>
+        </tr>
       <% }); %>
     </table>
   </div>
   <form method="post" action="/admin/coach">
     <div class="field">
-      <label for="coach_name">指導師姓名</label>
+      <label for="coach_role">帳號類型</label>
+      <select id="coach_role" name="role">
+        <option value="teacher">老師</option>
+        <option value="coach">指導師</option>
+      </select>
+      <small>指導師可以看到所有老師負責的期別和家長；老師只看得到自己負責的期別。</small>
+    </div>
+    <div class="field">
+      <label for="coach_name">姓名</label>
       <input id="coach_name" name="display_name" type="text" required maxlength="40">
     </div>
     <div class="field">
@@ -52,7 +66,7 @@
     <div class="field">
       <label for="coach_password">初始密碼</label>
       <input id="coach_password" name="password" type="text" required minlength="6">
-      <small>建立後請自行告知指導師，並提醒之後可以更換</small>
+      <small>建立後請自行告知本人，並提醒之後可以更換</small>
     </div>
     <div class="field">
       <label for="coach_cohort">指派期別</label>
@@ -63,7 +77,7 @@
         <% }); %>
       </select>
     </div>
-    <button type="submit" class="btn btn-primary">建立指導師帳號</button>
+    <button type="submit" class="btn btn-primary">建立帳號</button>
   </form>
 </div>
 

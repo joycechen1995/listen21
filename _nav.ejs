@@ -6,7 +6,7 @@
         <a href="/parent" class="<%= active === 'parent' ? 'active' : '' %>">我的打卡</a>
         <a href="/wall" class="<%= active === 'wall' ? 'active' : '' %>">夥伴動態牆</a>
         <a href="/leaderboard" class="<%= active === 'leaderboard' ? 'active' : '' %>">達標風雲榜</a>
-      <% } else if (user.role === 'coach') { %>
+      <% } else if (user.role === 'coach' || user.role === 'teacher') { %>
         <a href="/coach" class="<%= active === 'coach' ? 'active' : '' %>">學員總覽</a>
         <a href="/wall" class="<%= active === 'wall' ? 'active' : '' %>">夥伴動態牆</a>
         <a href="/leaderboard" class="<%= active === 'leaderboard' ? 'active' : '' %>">達標風雲榜</a>

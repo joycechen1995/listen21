@@ -9,9 +9,14 @@
 
 <% cohorts.forEach(function(cohort){ %>
   <div class="card">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
       <h2 style="font-size:1.02rem;"><%= cohort.name %></h2>
-      <span class="pill">邀請碼：<%= cohort.join_code %></span>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <% if (typeof cohort.teacher_name !== 'undefined') { %>
+          <span class="pill">負責老師：<%= cohort.teacher_name || '尚未指派' %></span>
+        <% } %>
+        <span class="pill">邀請碼：<%= cohort.join_code %></span>
+      </div>
     </div>
 
     <% if (cohort.commitments.length === 0) { %>

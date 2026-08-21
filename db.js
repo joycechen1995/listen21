@@ -42,12 +42,23 @@ async function migrate() {
       id SERIAL PRIMARY KEY,
       email TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('admin','coach','parent')),
+      role TEXT NOT NULL CHECK (role IN ('admin','coach','teacher','parent')),
       display_name TEXT NOT NULL,
       wall_nickname TEXT NOT NULL,
       cohort_id INTEGER,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+  `);
+
+  // widen the role check constraint to include 'teacher' for databases created
+  // before this role existed
+  await q(`
+    DO $$
+    BEGIN
+      ALTER TABLE listen21_users DROP CONSTRAINT IF EXISTS listen21_users_role_check;
+      ALTER TABLE listen21_users ADD CONSTRAINT listen21_users_role_check
+        CHECK (role IN ('admin','coach','teacher','parent'));
+    END $$;
   `);
 
   await q(`

@@ -30,7 +30,7 @@
         <div class="replylist">
           <% p.replies.forEach(function(r){ %>
             <div class="replyitem<%= r.isCoach ? ' coach' : '' %>">
-              <span class="rn"><%= r.nickname %><%= r.isCoach ? '（指導師）' : '' %></span><%= r.body %>
+              <span class="rn"><%= r.nickname %><%= r.roleLabel ? '（' + r.roleLabel + '）' : '' %></span><%= r.body %>
             </div>
           <% }); %>
         </div>

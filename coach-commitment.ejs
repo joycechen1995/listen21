@@ -31,12 +31,12 @@
       <% if (c.replies.length) { %>
         <div class="replylist" style="position:relative; z-index:1;">
           <% c.replies.forEach(function(r){ %>
-            <div class="replyitem<%= r.isCoach ? ' coach' : '' %>"><span class="rn"><%= r.nickname %><%= r.isCoach ? '（指導師）' : '' %></span><%= r.body %></div>
+            <div class="replyitem<%= r.isCoach ? ' coach' : '' %>"><span class="rn"><%= r.nickname %><%= r.roleLabel ? '（' + r.roleLabel + '）' : '' %></span><%= r.body %></div>
           <% }); %>
         </div>
       <% } %>
       <form method="post" action="/coach/checkin/<%= c.id %>/reply" class="replyform" style="position:relative; z-index:1; margin-top:10px;">
-        <input type="text" name="body" maxlength="200" placeholder="以指導師身分回覆…" required>
+        <input type="text" name="body" maxlength="200" placeholder="以<%= user.role === 'coach' ? '指導師' : '老師' %>身分回覆…" required>
         <button type="submit">送出</button>
       </form>
     </div>

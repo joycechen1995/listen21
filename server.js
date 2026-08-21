@@ -66,9 +66,11 @@ async function replyMapFor(checkinIds) {
   );
   rows.forEach((r) => {
     if (!map[r.checkin_id]) map[r.checkin_id] = [];
+    const isStaff = r.role === "coach" || r.role === "teacher";
     map[r.checkin_id].push({
       body: r.body,
-      isCoach: r.role === "coach",
+      isCoach: isStaff,
+      roleLabel: r.role === "coach" ? "指導師" : r.role === "teacher" ? "老師" : null,
       nickname: r.display_name
     });
   });
@@ -148,7 +150,7 @@ app.post("/register", async (req, res) => {
 app.get("/", (req, res) => {
   if (!req.user) return res.redirect("/login");
   if (req.user.role === "parent") return res.redirect("/parent");
-  if (req.user.role === "coach") return res.redirect("/coach");
+  if (req.user.role === "coach" || req.user.role === "teacher") return res.redirect("/coach");
   if (req.user.role === "admin") return res.redirect("/admin");
   res.redirect("/login");
 });
@@ -243,17 +245,23 @@ app.post("/parent/:id/checkin", requireRole("parent"), async (req, res) => {
   res.redirect("/parent/" + commitment.id);
 });
 
-// ---------- wall (parent + coach) ----------
+// ---------- wall (parent + coach + teacher) ----------
 async function cohortIdsFor(user) {
   if (user.role === "parent") return user.cohort_id ? [user.cohort_id] : [];
   if (user.role === "coach") {
+    // 指導師 (chief instructor) oversees every cohort, regardless of which
+    // teacher it's assigned to.
+    const { rows } = await q("SELECT id FROM listen21_cohorts");
+    return rows.map((r) => r.id);
+  }
+  if (user.role === "teacher") {
     const { rows } = await q("SELECT id FROM listen21_cohorts WHERE coach_id=$1", [user.id]);
     return rows.map((r) => r.id);
   }
   return [];
 }
 
-app.get("/wall", requireRole("parent", "coach"), async (req, res) => {
+app.get("/wall", requireRole("parent", "coach", "teacher"), async (req, res) => {
   const cohortIds = await cohortIdsFor(req.user);
   if (cohortIds.length === 0) {
     return res.render("wall", { user: req.user, active: "wall", posts: [] });
@@ -303,7 +311,7 @@ app.get("/wall", requireRole("parent", "coach"), async (req, res) => {
   res.render("wall", { user: req.user, active: "wall", posts });
 });
 
-app.post("/wall/:checkinId/like", requireRole("parent", "coach"), async (req, res) => {
+app.post("/wall/:checkinId/like", requireRole("parent", "coach", "teacher"), async (req, res) => {
   const checkinId = req.params.checkinId;
   try {
     await q("INSERT INTO listen21_likes (checkin_id, user_id) VALUES ($1,$2)", [checkinId, req.user.id]);
@@ -314,7 +322,7 @@ app.post("/wall/:checkinId/like", requireRole("parent", "coach"), async (req, re
   res.redirect("/wall");
 });
 
-app.post("/wall/:checkinId/reply", requireRole("parent", "coach"), async (req, res) => {
+app.post("/wall/:checkinId/reply", requireRole("parent", "coach", "teacher"), async (req, res) => {
   const body = (req.body.body || "").trim();
   if (body) {
     await q("INSERT INTO listen21_replies (checkin_id, user_id, body) VALUES ($1,$2,$3)", [
@@ -326,7 +334,7 @@ app.post("/wall/:checkinId/reply", requireRole("parent", "coach"), async (req, r
   res.redirect("/wall");
 });
 
-app.get("/leaderboard", requireRole("parent", "coach"), async (req, res) => {
+app.get("/leaderboard", requireRole("parent", "coach", "teacher"), async (req, res) => {
   const cohortIds = await cohortIdsFor(req.user);
   let entries = [];
   if (cohortIds.length) {
@@ -360,11 +368,17 @@ app.get("/leaderboard", requireRole("parent", "coach"), async (req, res) => {
   res.render("leaderboard", { user: req.user, active: "leaderboard", entries, totalDays: TOTAL_DAYS });
 });
 
-// ---------- coach ----------
-app.get("/coach", requireRole("coach"), async (req, res) => {
-  const { rows: cohorts } = await q("SELECT * FROM listen21_cohorts WHERE coach_id=$1 ORDER BY created_at", [
-    req.user.id
-  ]);
+// ---------- coach / teacher ----------
+app.get("/coach", requireRole("coach", "teacher"), async (req, res) => {
+  const { rows: cohorts } =
+    req.user.role === "coach"
+      ? await q(
+          `SELECT co.*, u.display_name AS teacher_name
+           FROM listen21_cohorts co
+           LEFT JOIN listen21_users u ON u.id = co.coach_id
+           ORDER BY co.created_at;`
+        )
+      : await q("SELECT * FROM listen21_cohorts WHERE coach_id=$1 ORDER BY created_at", [req.user.id]);
 
   for (const cohort of cohorts) {
     const { rows } = await q(
@@ -394,7 +408,7 @@ app.get("/coach", requireRole("coach"), async (req, res) => {
   res.render("coach", { user: req.user, active: "coach", cohorts });
 });
 
-app.get("/coach/commitment/:id", requireRole("coach"), async (req, res) => {
+app.get("/coach/commitment/:id", requireRole("coach", "teacher"), async (req, res) => {
   const { rows } = await q(
     `SELECT c.*, u.display_name AS parent_name, u.email AS parent_email, u.cohort_id
      FROM listen21_commitments c JOIN listen21_users u ON u.id = c.parent_id
@@ -404,8 +418,8 @@ app.get("/coach/commitment/:id", requireRole("coach"), async (req, res) => {
   const commitment = rows[0];
   if (!commitment) return res.status(404).send("找不到這筆承諾卡");
 
-  const { rows: myCohorts } = await q("SELECT id FROM listen21_cohorts WHERE coach_id=$1", [req.user.id]);
-  if (!myCohorts.some((c) => c.id === commitment.cohort_id)) {
+  const myCohortIds = await cohortIdsFor(req.user);
+  if (!myCohortIds.includes(commitment.cohort_id)) {
     return res.status(403).send("這不是你負責的期別");
   }
 
@@ -419,7 +433,7 @@ app.get("/coach/commitment/:id", requireRole("coach"), async (req, res) => {
   res.render("coach-commitment", { user: req.user, active: "coach", commitment, checkins });
 });
 
-app.post("/coach/checkin/:checkinId/reply", requireRole("coach"), async (req, res) => {
+app.post("/coach/checkin/:checkinId/reply", requireRole("coach", "teacher"), async (req, res) => {
   const body = (req.body.body || "").trim();
   const { rows } = await q(
     `SELECT c.id AS commitment_id FROM listen21_checkins ci
@@ -449,7 +463,7 @@ app.get("/admin", requireRole("admin"), async (req, res) => {
   const { rows: coaches } = await q(
     `SELECT u.*, co.name AS cohort_name FROM listen21_users u
      LEFT JOIN listen21_cohorts co ON co.coach_id = u.id
-     WHERE u.role='coach' ORDER BY u.created_at;`
+     WHERE u.role IN ('coach','teacher') ORDER BY u.role, u.created_at;`
   );
   res.render("admin", { user: req.user, active: "admin", cohorts, coaches, flash: null, error: null });
 });
@@ -467,6 +481,7 @@ app.post("/admin/coach", requireRole("admin"), async (req, res) => {
   const email = (req.body.email || "").trim().toLowerCase();
   const password = req.body.password || "";
   const cohort_id = req.body.cohort_id || null;
+  const role = req.body.role === "teacher" ? "teacher" : "coach";
 
   if (!display_name || !email || password.length < 6) {
     return res.redirect("/admin");
@@ -475,8 +490,8 @@ app.post("/admin/coach", requireRole("admin"), async (req, res) => {
   const password_hash = await bcrypt.hash(password, 10);
   const { rows } = await q(
     `INSERT INTO listen21_users (email, password_hash, role, display_name, wall_nickname)
-     VALUES ($1,$2,'coach',$3,$4) RETURNING id;`,
-    [email, password_hash, display_name, randomNickname()]
+     VALUES ($1,$2,$3,$4,$5) RETURNING id;`,
+    [email, password_hash, role, display_name, randomNickname()]
   );
 
   if (cohort_id) {
