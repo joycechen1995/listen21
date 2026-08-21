@@ -58,7 +58,7 @@ async function replyMapFor(checkinIds) {
   const map = {};
   if (checkinIds.length === 0) return map;
   const { rows } = await q(
-    `SELECT r.checkin_id, r.body, r.created_at, u.role, u.display_name, u.wall_nickname
+    `SELECT r.checkin_id, r.body, r.created_at, u.role, u.display_name
      FROM listen21_replies r JOIN listen21_users u ON u.id = r.user_id
      WHERE r.checkin_id = ANY($1)
      ORDER BY r.created_at ASC;`,
@@ -69,7 +69,7 @@ async function replyMapFor(checkinIds) {
     map[r.checkin_id].push({
       body: r.body,
       isCoach: r.role === "coach",
-      nickname: r.role === "coach" ? r.display_name : r.wall_nickname
+      nickname: r.display_name
     });
   });
   return map;
@@ -260,7 +260,7 @@ app.get("/wall", requireRole("parent", "coach"), async (req, res) => {
   }
 
   const { rows } = await q(
-    `SELECT ci.id, ci.day_number, ci.note, u.id AS parent_user_id, u.wall_nickname
+    `SELECT ci.id, ci.day_number, ci.note, u.id AS parent_user_id, u.display_name
      FROM listen21_checkins ci
      JOIN listen21_commitments c ON c.id = ci.commitment_id
      JOIN listen21_users u ON u.id = c.parent_id
@@ -292,7 +292,7 @@ app.get("/wall", requireRole("parent", "coach"), async (req, res) => {
     id: r.id,
     day_number: r.day_number,
     note: r.note,
-    nickname: r.wall_nickname,
+    nickname: r.display_name,
     isCoach: false,
     mine: req.user.role === "parent" && r.parent_user_id === req.user.id,
     likeCount: likeCountMap[r.id] || 0,
