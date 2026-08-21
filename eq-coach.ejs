@@ -1,0 +1,182 @@
+<%- include('_head', { title: '高情商回復' }) %>
+<%- include('_nav', { user, active: 'eq-coach' }) %>
+
+<h1 style="font-size:1.2rem; margin-bottom:6px;">高情商回復</h1>
+<p class="small muted" style="margin-bottom:18px;">練習用更有連結感的方式，聽懂孩子行為背後的情緒和需求。</p>
+
+<% if (!apiConfigured) { %>
+  <div class="card emptystate"><p>AI教練功能還沒有設定好，請聯絡系統管理員。</p></div>
+<% } else { %>
+
+<div class="pillrow" style="margin-bottom:16px;">
+  <button type="button" class="pill eqtab-btn active" data-tab="reflect">情境複盤</button>
+  <button type="button" class="pill eqtab-btn" data-tab="roleplay">角色扮演練習</button>
+</div>
+
+<div id="eqtab-reflect" class="eqtab">
+  <div class="card">
+    <div class="small" style="font-weight:700; color:var(--ink-muted); margin-bottom:10px;">今天發生了什麼事？</div>
+    <p class="small muted" style="margin-bottom:10px;">寫下孩子說了什麼、做了什麼，或是你原本想怎麼回應，AI教練會陪你複盤。</p>
+    <form id="reflect-form">
+      <div class="field">
+        <textarea id="reflect-situation" name="situation" rows="5" maxlength="1000" required placeholder="例如：他今天說不想去補習，我當下有點生氣，就跟他說「你怎麼可以這麼不努力」..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:auto;">送出，請AI教練陪我複盤</button>
+    </form>
+    <div id="reflect-loading" class="small muted" style="display:none; margin-top:12px;">AI教練思考中...</div>
+    <div id="reflect-error" class="flash err" style="display:none; margin-top:12px;"></div>
+    <div id="reflect-result" class="notecard" style="display:none; margin-top:16px; white-space:pre-wrap;"></div>
+  </div>
+</div>
+
+<div id="eqtab-roleplay" class="eqtab" style="display:none;">
+  <div class="card">
+    <div class="small" style="font-weight:700; color:var(--ink-muted); margin-bottom:10px;">選一個練習情境</div>
+    <div class="pillrow" style="margin-bottom:14px;">
+      <% personas.forEach(function(p, i){ %>
+        <button type="button" class="pill persona-btn<%= i === 0 ? ' active' : '' %>" data-persona="<%= p.id %>"><%= p.label %></button>
+      <% }); %>
+    </div>
+    <p id="persona-intro" class="small muted" style="margin-bottom:14px;"><%= personas[0] ? personas[0].intro : '' %></p>
+
+    <div id="rp-messages" style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;"></div>
+
+    <form id="roleplay-form" style="display:flex; gap:10px;">
+      <input type="text" id="rp-message" maxlength="300" placeholder="想想看，你會怎麼開口..." required style="flex:1;">
+      <button type="submit" class="btn btn-primary" style="width:auto;">送出</button>
+    </form>
+    <div id="rp-loading" class="small muted" style="display:none; margin-top:10px;">孩子想了一下...</div>
+    <div id="rp-error" class="flash err" style="display:none; margin-top:10px;"></div>
+    <button type="button" id="rp-reset" class="btn btn-ghost" style="width:auto; margin-top:14px; font-size:0.82rem; padding:6px 12px;">重新開始這個練習</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var personas = <%- JSON.stringify(personas) %>;
+  var currentPersonaId = personas.length ? personas[0].id : null;
+  var history = [];
+
+  var tabBtns = document.querySelectorAll('.eqtab-btn');
+  tabBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      tabBtns.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelectorAll('.eqtab').forEach(function(t){ t.style.display = 'none'; });
+      document.getElementById('eqtab-' + btn.dataset.tab).style.display = '';
+    });
+  });
+
+  var reflectForm = document.getElementById('reflect-form');
+  reflectForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    var situation = document.getElementById('reflect-situation').value.trim();
+    if (!situation) return;
+    var loading = document.getElementById('reflect-loading');
+    var errBox = document.getElementById('reflect-error');
+    var result = document.getElementById('reflect-result');
+    loading.style.display = '';
+    errBox.style.display = 'none';
+    result.style.display = 'none';
+    fetch('/eq-coach/reflect', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ situation: situation })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
+      .then(function(res){
+        loading.style.display = 'none';
+        if (!res.ok) {
+          errBox.textContent = res.data.error || 'AI暫時無法回應，請稍後再試一次。';
+          errBox.style.display = '';
+          return;
+        }
+        result.textContent = res.data.reply;
+        result.style.display = '';
+      }).catch(function(){
+        loading.style.display = 'none';
+        errBox.textContent = '網路連線有問題，請稍後再試一次。';
+        errBox.style.display = '';
+      });
+  });
+
+  var personaBtns = document.querySelectorAll('.persona-btn');
+  personaBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      personaBtns.forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentPersonaId = btn.dataset.persona;
+      var p = personas.filter(function(x){ return x.id === currentPersonaId; })[0];
+      document.getElementById('persona-intro').textContent = p ? p.intro : '';
+      resetRoleplay();
+    });
+  });
+
+  function resetRoleplay(){
+    history = [];
+    document.getElementById('rp-messages').innerHTML = '';
+    document.getElementById('rp-error').style.display = 'none';
+  }
+  document.getElementById('rp-reset').addEventListener('click', resetRoleplay);
+
+  function addBubble(role, text, tip){
+    var wrap = document.createElement('div');
+    wrap.style.alignSelf = role === 'parent' ? 'flex-end' : 'flex-start';
+    wrap.style.maxWidth = '80%';
+    var bubble = document.createElement('div');
+    bubble.style.padding = '10px 14px';
+    bubble.style.borderRadius = '14px';
+    bubble.style.fontSize = '0.9rem';
+    bubble.style.background = role === 'parent' ? 'var(--primary)' : 'var(--card-alt, #f0ede4)';
+    bubble.style.color = role === 'parent' ? '#fff' : 'var(--ink)';
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+    if (tip) {
+      var tipEl = document.createElement('div');
+      tipEl.className = 'small muted';
+      tipEl.style.marginTop = '4px';
+      tipEl.textContent = '教練提示：' + tip;
+      wrap.appendChild(tipEl);
+    }
+    document.getElementById('rp-messages').appendChild(wrap);
+    wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+
+  var roleplayForm = document.getElementById('roleplay-form');
+  roleplayForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    var input = document.getElementById('rp-message');
+    var message = input.value.trim();
+    if (!message || !currentPersonaId) return;
+    addBubble('parent', message);
+    input.value = '';
+    var loading = document.getElementById('rp-loading');
+    var errBox = document.getElementById('rp-error');
+    loading.style.display = '';
+    errBox.style.display = 'none';
+    fetch('/eq-coach/roleplay', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ persona_id: currentPersonaId, history: history, message: message })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, data: d }; }); })
+      .then(function(res){
+        loading.style.display = 'none';
+        if (!res.ok) {
+          errBox.textContent = res.data.error || 'AI暫時無法回應，請稍後再試一次。';
+          errBox.style.display = '';
+          return;
+        }
+        history.push({ role: 'parent', text: message });
+        history.push({ role: 'child', text: res.data.childReply || '' });
+        addBubble('child', res.data.childReply || '...', res.data.coachTip);
+      }).catch(function(){
+        loading.style.display = 'none';
+        errBox.textContent = '網路連線有問題，請稍後再試一次。';
+        errBox.style.display = '';
+      });
+  });
+})();
+</script>
+
+<% } %>
+
+<%- include('_foot') %>
