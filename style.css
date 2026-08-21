@@ -83,6 +83,8 @@ a{color:var(--primary-strong);}
 .btn-primary{background:var(--primary); color:#fff;}
 .btn-accent{background:var(--accent); color:#2A1A02;}
 .btn-ghost{background:transparent; border:1px solid var(--border); color:var(--ink);}
+.btn-danger{background:#fff; border:1px solid #C0392B; color:#C0392B;}
+.btn-danger:hover{background:#C0392B; color:#fff;}
 .btn.small{width:auto; padding:8px 14px; font-size:0.82rem;}
 .btn.full{width:100%;}
 

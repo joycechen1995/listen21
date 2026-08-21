@@ -461,7 +461,7 @@ app.get("/admin", requireRole("admin"), async (req, res) => {
      ORDER BY co.created_at;`
   );
   const { rows: coaches } = await q(
-    `SELECT u.*, co.name AS cohort_name FROM listen21_users u
+    `SELECT u.*, co.id AS cohort_id, co.name AS cohort_name FROM listen21_users u
      LEFT JOIN listen21_cohorts co ON co.coach_id = u.id
      WHERE u.role IN ('coach','teacher') ORDER BY u.role, u.created_at;`
   );
@@ -534,6 +534,24 @@ app.post("/admin/coach", requireRole("admin"), async (req, res) => {
   if (cohort_id) {
     await q("UPDATE listen21_cohorts SET coach_id=$1 WHERE id=$2", [rows[0].id, cohort_id]);
   }
+
+  res.redirect("/admin");
+});
+
+app.post("/admin/coach/:id/delete", requireRole("admin"), async (req, res) => {
+  const targetId = req.params.id;
+  const { rows } = await q("SELECT id, role FROM listen21_users WHERE id=$1", [targetId]);
+  const target = rows[0];
+  // only ever allow deleting coach/teacher staff accounts through this route —
+  // never admin or parent accounts, even if someone tampers with the form.
+  if (!target || (target.role !== "coach" && target.role !== "teacher")) {
+    return res.redirect("/admin");
+  }
+
+  await q("UPDATE listen21_cohorts SET coach_id=NULL WHERE coach_id=$1", [targetId]);
+  await q("DELETE FROM listen21_likes WHERE user_id=$1", [targetId]);
+  await q("DELETE FROM listen21_replies WHERE user_id=$1", [targetId]);
+  await q("DELETE FROM listen21_users WHERE id=$1", [targetId]);
 
   res.redirect("/admin");
 });

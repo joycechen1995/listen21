@@ -35,13 +35,24 @@
   <p class="small muted" style="margin-bottom:14px;">指導師可以看到底下所有老師負責的期別和家長；老師只看得到自己被指派的期別。</p>
   <div style="overflow-x:auto; margin-bottom:18px;">
     <table class="plain">
-      <tr><th>姓名</th><th>類型</th><th>Email</th><th>負責期別</th></tr>
+      <tr><th>姓名</th><th>類型</th><th>Email</th><th>負責期別</th><th></th></tr>
       <% coaches.forEach(function(c){ %>
         <tr>
           <td><%= c.display_name %></td>
           <td><span class="pill<%= c.role === 'coach' ? ' warn' : '' %>"><%= c.role === 'coach' ? '指導師' : '老師' %></span></td>
           <td><%= c.email %></td>
-          <td><%= c.cohort_name || '尚未指派' %></td>
+          <td>
+            <% if (c.cohort_name) { %>
+              <a href="/admin/cohort/<%= c.cohort_id %>"><%= c.cohort_name %></a>
+            <% } else { %>
+              尚未指派
+            <% } %>
+          </td>
+          <td>
+            <form method="post" action="/admin/coach/<%= c.id %>/delete" onsubmit="return confirm('確定要刪除「<%= c.display_name %>」的帳號嗎？這個動作無法復原。');">
+              <button type="submit" class="btn btn-danger" style="width:auto; padding:4px 10px; font-size:0.82rem;">刪除</button>
+            </form>
+          </td>
         </tr>
       <% }); %>
     </table>
