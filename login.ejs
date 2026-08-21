@@ -1,0 +1,25 @@
+<%- include('_head', { title: '登入', narrow: true }) %>
+<%- include('_nav', { user: null }) %>
+
+<div class="card">
+  <h1 style="font-size:1.3rem; margin-bottom:6px;">登入</h1>
+  <p class="muted small" style="margin-bottom:18px;">家長、指導師、管理員都從這裡登入。</p>
+
+  <% if (error) { %><div class="flash err"><%= error %></div><% } %>
+
+  <form method="post" action="/login">
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" required value="<%= typeof email !== 'undefined' ? email : '' %>">
+    </div>
+    <div class="field">
+      <label for="password">密碼</label>
+      <input id="password" name="password" type="password" required>
+    </div>
+    <button class="btn btn-primary" type="submit">登入</button>
+  </form>
+
+  <p class="small muted" style="margin-top:16px;">還沒有帳號？<a href="/register">用邀請碼註冊家長帳號</a></p>
+</div>
+
+<%- include('_foot') %>

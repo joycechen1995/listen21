@@ -1,0 +1,70 @@
+<%- include('_head', { title: '後台管理' }) %>
+<%- include('_nav', { user, active: 'admin' }) %>
+
+<h1 style="font-size:1.2rem; margin-bottom:14px;">後台管理</h1>
+
+<% if (typeof flash !== 'undefined' && flash) { %><div class="flash"><%= flash %></div><% } %>
+<% if (typeof error !== 'undefined' && error) { %><div class="flash err"><%= error %></div><% } %>
+
+<div class="card">
+  <h2 style="font-size:1rem; margin-bottom:14px;">期別</h2>
+  <div style="overflow-x:auto; margin-bottom:18px;">
+    <table class="plain">
+      <tr><th>期別</th><th>邀請碼</th><th>指導師</th><th>學員數</th></tr>
+      <% cohorts.forEach(function(c){ %>
+        <tr>
+          <td><%= c.name %></td>
+          <td><%= c.join_code %></td>
+          <td><%= c.coach_name || '尚未指派' %></td>
+          <td><%= c.parent_count %></td>
+        </tr>
+      <% }); %>
+    </table>
+  </div>
+  <form method="post" action="/admin/cohort" style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+    <div class="field" style="flex:1; min-width:180px; margin-bottom:0;">
+      <label for="cohort_name">新增期別名稱</label>
+      <input id="cohort_name" name="name" type="text" required maxlength="40" placeholder="例如：第二期">
+    </div>
+    <button type="submit" class="btn btn-primary" style="width:auto;">新增期別</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2 style="font-size:1rem; margin-bottom:14px;">指導師帳號</h2>
+  <div style="overflow-x:auto; margin-bottom:18px;">
+    <table class="plain">
+      <tr><th>姓名</th><th>Email</th><th>負責期別</th></tr>
+      <% coaches.forEach(function(c){ %>
+        <tr><td><%= c.display_name %></td><td><%= c.email %></td><td><%= c.cohort_name || '尚未指派' %></td></tr>
+      <% }); %>
+    </table>
+  </div>
+  <form method="post" action="/admin/coach">
+    <div class="field">
+      <label for="coach_name">指導師姓名</label>
+      <input id="coach_name" name="display_name" type="text" required maxlength="40">
+    </div>
+    <div class="field">
+      <label for="coach_email">Email</label>
+      <input id="coach_email" name="email" type="email" required>
+    </div>
+    <div class="field">
+      <label for="coach_password">初始密碼</label>
+      <input id="coach_password" name="password" type="text" required minlength="6">
+      <small>建立後請自行告知指導師，並提醒之後可以更換</small>
+    </div>
+    <div class="field">
+      <label for="coach_cohort">指派期別</label>
+      <select id="coach_cohort" name="cohort_id">
+        <option value="">先不指派</option>
+        <% cohorts.forEach(function(c){ %>
+          <option value="<%= c.id %>"><%= c.name %></option>
+        <% }); %>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">建立指導師帳號</button>
+  </form>
+</div>
+
+<%- include('_foot') %>

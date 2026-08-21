@@ -1,0 +1,90 @@
+<%- include('_head', { title: commitment.child_name }) %>
+<%- include('_nav', { user, active: 'parent' }) %>
+
+<p class="small muted" style="margin-bottom:10px;"><a href="/parent">← 我的所有旅程</a></p>
+
+<% if (isComplete) { %>
+  <div class="card" style="text-align:center;">
+    <div style="font-size:2rem; margin-bottom:6px;">🎉</div>
+    <h1 style="font-size:1.2rem; margin-bottom:8px;">21天，你真的做到了</h1>
+    <p class="muted small">從「<%= commitment.action_text %>」開始，你已經完成21天的記錄。</p>
+  </div>
+<% } %>
+
+<div class="card">
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+    <div>
+      <div class="small muted" style="margin-bottom:4px;">我的承諾對象</div>
+      <div style="font-weight:700;"><%= commitment.child_name %></div>
+    </div>
+  </div>
+  <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border); font-size:0.88rem; display:flex; flex-direction:column; gap:10px;">
+    <div><div class="small muted">最想改善的關係</div><%= commitment.relationship %></div>
+    <div><div class="small muted">未來21天，我願意做到</div><%= commitment.action_text %></div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="num"><%= doneCount %> / 21</div><div class="lbl">累積完成天數</div></div>
+  <div class="stat accentnum"><div class="num"><%= windowClosed ? '已結束' : ('第 ' + currentDay + ' 天') %></div><div class="lbl">目前進度</div></div>
+</div>
+
+<div class="card">
+  <div class="small" style="font-weight:700; color:var(--ink-muted); margin-bottom:10px;">21天總覽</div>
+  <div class="daygrid">
+    <% for (let i = 1; i <= 21; i++) { const isDone = doneDays.includes(i); %>
+      <div class="dcell <%= isDone ? 'done' : (i === currentDay && !windowClosed ? 'today' : '') %>">
+        <span class="daynum"><%= i %></span>
+        <span class="face"><%= isDone ? '😊' : '😴' %></span>
+      </div>
+    <% } %>
+  </div>
+  <div class="gridnote">打卡後笑臉會亮起來 😊；一天只能打卡一次，依真實日期自動往下一天走。</div>
+</div>
+
+<% if (!windowClosed) { %>
+  <% if (todayCheckin) { %>
+    <div class="card">
+      <h2 style="font-size:1.02rem; margin-bottom:10px;">Day <%= currentDay %> 已完成</h2>
+      <div class="notecard" style="margin-bottom:0;">
+        <span class="quote-mark">&ldquo;</span>
+        <div class="text"><%= todayCheckin.note %></div>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="card">
+      <h2 style="font-size:1.02rem; margin-bottom:4px;">Day <%= currentDay %> 打卡</h2>
+      <p class="small muted" style="margin-bottom:14px;">你的承諾：<strong style="color:var(--primary-strong);"><%= commitment.action_text %></strong></p>
+      <% if (error) { %><div class="flash err"><%= error %></div><% } %>
+      <form method="post" action="/parent/<%= commitment.id %>/checkin">
+        <div class="field">
+          <label for="note">今天，你聽到了什麼？發現了什麼？</label>
+          <textarea id="note" name="note" rows="3" required minlength="2" maxlength="500" placeholder="用一句話記錄今天"></textarea>
+        </div>
+        <button type="submit" class="btn btn-accent">今天已完成</button>
+      </form>
+    </div>
+  <% } %>
+<% } else if (!isComplete) { %>
+  <div class="card">
+    <p class="small muted">這一輪21天的時間視窗已經結束，你完成了 <%= doneCount %> 天的記錄。想繼續練習的話，可以為同一個孩子開始新的一輪。</p>
+    <a class="btn btn-ghost" href="/parent/new">開始新的一輪</a>
+  </div>
+<% } %>
+
+<% if (checkins.length > 0) { %>
+  <div class="card">
+    <div class="small" style="font-weight:700; color:var(--ink-muted); margin-bottom:10px;">
+      <%= isComplete ? '21天完整記錄' : '最近的記錄' %>
+    </div>
+    <% checkins.slice().reverse().slice(0, isComplete ? checkins.length : 5).forEach(function(c){ %>
+      <div class="notecard">
+        <span class="quote-mark">&ldquo;</span>
+        <span class="daychip">Day <%= c.day_number %></span>
+        <div class="text" style="margin-top:8px;"><%= c.note %></div>
+      </div>
+    <% }); %>
+  </div>
+<% } %>
+
+<%- include('_foot') %>

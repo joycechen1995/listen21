@@ -1,0 +1,46 @@
+<%- include('_head', { title: '夥伴動態牆' }) %>
+<%- include('_nav', { user, active: 'wall' }) %>
+
+<h1 style="font-size:1.2rem; margin-bottom:6px;">夥伴動態牆</h1>
+<p class="small muted" style="margin-bottom:18px;">同期學員的匿名打卡分享，你可以按讚或留言鼓勵。暱稱是系統隨機配的，看不出真實身分。</p>
+
+<% if (posts.length === 0) { %>
+  <div class="card emptystate"><p>這一期還沒有人打卡，成為第一個吧！</p></div>
+<% } %>
+
+<% posts.forEach(function(p){ %>
+  <div class="notecard<%= p.mine ? ' mine' : '' %>">
+    <span class="quote-mark">&ldquo;</span>
+    <div class="post-head">
+      <span class="nickname<%= p.isCoach ? ' coach' : '' %>">
+        <%= p.nickname %>
+        <% if (p.mine) { %><span class="mine-tag">你</span><% } %>
+        <% if (p.isCoach) { %><span class="coach-tag">指導師</span><% } %>
+      </span>
+      <span class="daychip">Day <%= p.day_number %></span>
+    </div>
+    <div class="text"><%= p.note %></div>
+    <div class="likebar">
+      <form method="post" action="/wall/<%= p.id %>/like">
+        <button type="submit" class="likebtn<%= p.liked ? ' liked' : '' %>">❤ 鼓勵 <span><%= p.likeCount %></span></button>
+      </form>
+    </div>
+    <div class="replybox">
+      <% if (p.replies.length) { %>
+        <div class="replylist">
+          <% p.replies.forEach(function(r){ %>
+            <div class="replyitem<%= r.isCoach ? ' coach' : '' %>">
+              <span class="rn"><%= r.nickname %><%= r.isCoach ? '（指導師）' : '' %></span><%= r.body %>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+      <form method="post" action="/wall/<%= p.id %>/reply" class="replyform">
+        <input type="text" name="body" maxlength="200" placeholder="留言鼓勵一下…" required>
+        <button type="submit">送出</button>
+      </form>
+    </div>
+  </div>
+<% }); %>
+
+<%- include('_foot') %>

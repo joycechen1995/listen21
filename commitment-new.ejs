@@ -1,0 +1,41 @@
+<%- include('_head', { title: '寫下承諾' }) %>
+<%- include('_nav', { user, active: 'parent' }) %>
+
+<div class="card">
+  <h1 style="font-size:1.3rem; line-height:1.4; margin-bottom:10px;">寫下你的21天承諾</h1>
+  <p class="muted small" style="margin-bottom:18px;">先別急著打卡。花一分鐘，把課堂上的感動，翻譯成一個小到不會失敗的具體行動。如果你有不只一個孩子，可以個別建立多張承諾卡，各自跑自己的21天。</p>
+
+  <details style="margin-bottom:20px; border:1px solid var(--border); border-radius:10px;">
+    <summary style="cursor:pointer; padding:11px 14px; font-size:0.85rem; font-weight:600; color:var(--primary-strong);">怎麼寫比較好？</summary>
+    <div style="padding:0 14px 14px; display:flex; flex-direction:column; gap:8px;">
+      <div style="border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:0.85rem;">
+        <span style="font-size:0.68rem; font-weight:700; color:var(--bad); display:block; margin-bottom:4px;">✕ 太抽象</span>
+        我要成為更好的父母
+      </div>
+      <div style="background:var(--accent-soft); border-radius:8px; padding:10px 12px; font-size:0.85rem;">
+        <span style="font-size:0.68rem; font-weight:700; color:var(--accent-strong); display:block; margin-bottom:4px;">✓ 具體可執行</span>
+        我每天花10分鐘，不批評、不建議，只聽孩子說話。下次孩子抱怨時，我先問：「你最近是不是遇到什麼困難？」
+      </div>
+    </div>
+  </details>
+
+  <% if (error) { %><div class="flash err"><%= error %></div><% } %>
+
+  <form method="post" action="/parent/new">
+    <div class="field">
+      <label for="child_name">我的孩子（暱稱即可，不會公開顯示）</label>
+      <input id="child_name" name="child_name" type="text" required maxlength="40" placeholder="例如：小樹（今年10歲）">
+    </div>
+    <div class="field">
+      <label for="relationship">我最想改善的關係</label>
+      <input id="relationship" name="relationship" type="text" required maxlength="60" placeholder="例如：他放學後常常不想跟我說話">
+    </div>
+    <div class="field">
+      <label for="action_text">未來21天，我願意做到</label>
+      <textarea id="action_text" name="action_text" rows="3" required minlength="6" placeholder="寫一個具體、每天做得到的小動作"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">開始我的21天旅程</button>
+  </form>
+</div>
+
+<%- include('_foot') %>

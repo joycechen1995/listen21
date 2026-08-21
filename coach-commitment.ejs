@@ -1,0 +1,46 @@
+<%- include('_head', { title: commitment.child_name + ' 的紀錄' }) %>
+<%- include('_nav', { user, active: 'coach' }) %>
+
+<p class="small muted" style="margin-bottom:10px;"><a href="/coach">← 學員總覽</a></p>
+
+<div class="card">
+  <div class="small muted" style="margin-bottom:4px;">家長</div>
+  <div style="font-weight:700; margin-bottom:14px;"><%= commitment.parent_name %>（<%= commitment.parent_email %>）</div>
+  <div style="padding-top:14px; border-top:1px solid var(--border); font-size:0.88rem; display:flex; flex-direction:column; gap:10px;">
+    <div><div class="small muted">孩子</div><%= commitment.child_name %></div>
+    <div><div class="small muted">最想改善的關係</div><%= commitment.relationship %></div>
+    <div><div class="small muted">未來21天，願意做到</div><%= commitment.action_text %></div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="num"><%= checkins.length %> / 21</div><div class="lbl">累積完成天數</div></div>
+</div>
+
+<div class="card">
+  <div class="small" style="font-weight:700; color:var(--ink-muted); margin-bottom:10px;">逐日記錄</div>
+  <% if (checkins.length === 0) { %>
+    <p class="small muted">還沒有任何打卡記錄。</p>
+  <% } %>
+  <% checkins.slice().reverse().forEach(function(c){ %>
+    <div class="notecard">
+      <span class="quote-mark">&ldquo;</span>
+      <span class="daychip">Day <%= c.day_number %></span>
+      <div class="text" style="margin-top:8px; margin-bottom:10px;"><%= c.note %></div>
+
+      <% if (c.replies.length) { %>
+        <div class="replylist" style="position:relative; z-index:1;">
+          <% c.replies.forEach(function(r){ %>
+            <div class="replyitem<%= r.isCoach ? ' coach' : '' %>"><span class="rn"><%= r.nickname %><%= r.isCoach ? '（指導師）' : '' %></span><%= r.body %></div>
+          <% }); %>
+        </div>
+      <% } %>
+      <form method="post" action="/coach/checkin/<%= c.id %>/reply" class="replyform" style="position:relative; z-index:1; margin-top:10px;">
+        <input type="text" name="body" maxlength="200" placeholder="以指導師身分回覆…" required>
+        <button type="submit">送出</button>
+      </form>
+    </div>
+  <% }); %>
+</div>
+
+<%- include('_foot') %>
