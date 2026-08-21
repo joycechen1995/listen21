@@ -331,14 +331,22 @@ app.get("/leaderboard", requireRole("parent", "coach"), async (req, res) => {
   let entries = [];
   if (cohortIds.length) {
     const { rows } = await q(
-      `SELECT u.id AS parent_user_id, u.display_name,
-              COUNT(ci.id)::int AS done_count,
-              MAX(ci.created_at) AS last_checkin_at
-       FROM listen21_commitments c
-       JOIN listen21_users u ON u.id = c.parent_id
-       JOIN listen21_checkins ci ON ci.commitment_id = c.id
-       WHERE u.cohort_id = ANY($1)
-       GROUP BY c.id, u.id, u.display_name
+      `WITH per_commitment AS (
+         SELECT c.id AS commitment_id, u.id AS parent_user_id, u.display_name,
+                COUNT(ci.id)::int AS done_count,
+                MAX(ci.created_at) AS last_checkin_at
+         FROM listen21_commitments c
+         JOIN listen21_users u ON u.id = c.parent_id
+         JOIN listen21_checkins ci ON ci.commitment_id = c.id
+         WHERE u.cohort_id = ANY($1)
+         GROUP BY c.id, u.id, u.display_name
+       ),
+       best_per_parent AS (
+         SELECT DISTINCT ON (parent_user_id) parent_user_id, display_name, done_count, last_checkin_at
+         FROM per_commitment
+         ORDER BY parent_user_id, done_count DESC, last_checkin_at ASC
+       )
+       SELECT * FROM best_per_parent
        ORDER BY done_count DESC, last_checkin_at ASC;`,
       [cohortIds]
     );
