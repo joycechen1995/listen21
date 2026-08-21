@@ -9,9 +9,14 @@
 
   <form method="post" action="/register">
     <div class="field">
-      <label for="display_name">你的稱呼</label>
-      <input id="display_name" name="display_name" type="text" required maxlength="40" value="<%= typeof display_name !== 'undefined' ? display_name : '' %>">
-      <small>這個稱呼會顯示在動態牆和達標風雲榜給同期學員看到，可以填本名，也可以填暱稱。</small>
+      <label for="real_name">真實姓名</label>
+      <input id="real_name" name="real_name" type="text" required maxlength="40" value="<%= typeof real_name !== 'undefined' ? real_name : '' %>">
+      <small>讓指導師和老師知道你是誰，方便聯繫，不會公開顯示給其他學員。</small>
+    </div>
+    <div class="field">
+      <label for="display_name">暱稱（選填）</label>
+      <input id="display_name" name="display_name" type="text" maxlength="40" value="<%= typeof display_name !== 'undefined' ? display_name : '' %>">
+      <small>這個會顯示在動態牆和達標風雲榜給同期學員看到。不填的話就直接用真實姓名；想匿名的話可以在這裡填別的稱呼。</small>
     </div>
     <div class="field">
       <label for="email">Email</label>

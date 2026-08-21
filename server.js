@@ -107,18 +107,20 @@ app.post("/logout", (req, res) => {
 
 app.get("/register", (req, res) => {
   if (req.user) return res.redirect("/");
-  res.render("register", { error: null, email: "", display_name: "", join_code: "" });
+  res.render("register", { error: null, email: "", real_name: "", display_name: "", join_code: "" });
 });
 
 app.post("/register", async (req, res) => {
-  const display_name = (req.body.display_name || "").trim();
+  const real_name = (req.body.real_name || "").trim();
+  const nicknameInput = (req.body.display_name || "").trim();
+  const display_name = nicknameInput || real_name;
   const email = (req.body.email || "").trim().toLowerCase();
   const password = req.body.password || "";
   const join_code = (req.body.join_code || "").trim().toUpperCase();
 
-  const formState = { display_name, email, join_code };
+  const formState = { real_name, display_name: nicknameInput, email, join_code };
 
-  if (!display_name || !email || password.length < 6 || !join_code) {
+  if (!real_name || !email || password.length < 6 || !join_code) {
     return res.render("register", { error: "請完整填寫表單，密碼至少6碼", ...formState });
   }
 
@@ -134,9 +136,9 @@ app.post("/register", async (req, res) => {
 
   const password_hash = await bcrypt.hash(password, 10);
   const { rows } = await q(
-    `INSERT INTO listen21_users (email, password_hash, role, display_name, wall_nickname, cohort_id)
-     VALUES ($1,$2,'parent',$3,$4,$5) RETURNING *;`,
-    [email, password_hash, display_name, randomNickname(), cohortRows[0].id]
+    `INSERT INTO listen21_users (email, password_hash, role, display_name, real_name, wall_nickname, cohort_id)
+     VALUES ($1,$2,'parent',$3,$4,$5,$6) RETURNING *;`,
+    [email, password_hash, display_name, real_name, randomNickname(), cohortRows[0].id]
   );
   res.cookie("session", signSession(rows[0]), {
     httpOnly: true,
@@ -382,7 +384,7 @@ app.get("/coach", requireRole("coach", "teacher"), async (req, res) => {
 
   for (const cohort of cohorts) {
     const { rows } = await q(
-      `SELECT c.id, c.child_name, c.created_at, u.display_name AS parent_name,
+      `SELECT c.id, c.child_name, c.created_at, u.real_name AS parent_name, u.display_name AS parent_nickname,
               (SELECT COUNT(*) FROM listen21_checkins ci WHERE ci.commitment_id=c.id)::int AS done_count
        FROM listen21_commitments c JOIN listen21_users u ON u.id = c.parent_id
        WHERE u.cohort_id=$1 ORDER BY c.created_at DESC;`,
@@ -395,7 +397,7 @@ app.get("/coach", requireRole("coach", "teacher"), async (req, res) => {
     });
 
     const { rows: notStarted } = await q(
-      `SELECT u.id, u.display_name, u.email, u.created_at
+      `SELECT u.id, u.real_name, u.display_name, u.email, u.created_at
        FROM listen21_users u
        WHERE u.cohort_id=$1 AND u.role='parent'
          AND NOT EXISTS (SELECT 1 FROM listen21_commitments c WHERE c.parent_id = u.id)
@@ -410,7 +412,7 @@ app.get("/coach", requireRole("coach", "teacher"), async (req, res) => {
 
 app.get("/coach/commitment/:id", requireRole("coach", "teacher", "admin"), async (req, res) => {
   const { rows } = await q(
-    `SELECT c.*, u.display_name AS parent_name, u.email AS parent_email, u.cohort_id
+    `SELECT c.*, u.real_name AS parent_name, u.display_name AS parent_nickname, u.email AS parent_email, u.cohort_id
      FROM listen21_commitments c JOIN listen21_users u ON u.id = c.parent_id
      WHERE c.id=$1;`,
     [req.params.id]
@@ -480,7 +482,7 @@ app.get("/admin/cohort/:id", requireRole("admin"), async (req, res) => {
   if (!cohort) return res.status(404).send("找不到這個期別");
 
   const { rows: commitments } = await q(
-    `SELECT c.id, c.child_name, c.created_at, u.display_name AS parent_name,
+    `SELECT c.id, c.child_name, c.created_at, u.real_name AS parent_name, u.display_name AS parent_nickname,
             (SELECT COUNT(*) FROM listen21_checkins ci WHERE ci.commitment_id=c.id)::int AS done_count
      FROM listen21_commitments c JOIN listen21_users u ON u.id = c.parent_id
      WHERE u.cohort_id=$1 ORDER BY c.created_at DESC;`,
@@ -493,7 +495,7 @@ app.get("/admin/cohort/:id", requireRole("admin"), async (req, res) => {
   });
 
   const { rows: notStarted } = await q(
-    `SELECT u.id, u.display_name, u.email, u.created_at
+    `SELECT u.id, u.real_name, u.display_name, u.email, u.created_at
      FROM listen21_users u
      WHERE u.cohort_id=$1 AND u.role='parent'
        AND NOT EXISTS (SELECT 1 FROM listen21_commitments c WHERE c.parent_id = u.id)
@@ -526,8 +528,8 @@ app.post("/admin/coach", requireRole("admin"), async (req, res) => {
 
   const password_hash = await bcrypt.hash(password, 10);
   const { rows } = await q(
-    `INSERT INTO listen21_users (email, password_hash, role, display_name, wall_nickname)
-     VALUES ($1,$2,$3,$4,$5) RETURNING id;`,
+    `INSERT INTO listen21_users (email, password_hash, role, display_name, real_name, wall_nickname)
+     VALUES ($1,$2,$3,$4,$4,$5) RETURNING id;`,
     [email, password_hash, role, display_name, randomNickname()]
   );
 

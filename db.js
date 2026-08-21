@@ -61,6 +61,14 @@ async function migrate() {
     END $$;
   `);
 
+  // real_name: the person's actual name, always visible to coach/teacher/admin.
+  // display_name stays the public nickname shown on the wall & leaderboard —
+  // for existing accounts we don't have a separately-collected real name, so
+  // back-fill it from whatever they originally typed in display_name.
+  await q(`ALTER TABLE listen21_users ADD COLUMN IF NOT EXISTS real_name TEXT;`);
+  await q(`UPDATE listen21_users SET real_name = display_name WHERE real_name IS NULL;`);
+  await q(`ALTER TABLE listen21_users ALTER COLUMN real_name SET NOT NULL;`);
+
   await q(`
     CREATE TABLE IF NOT EXISTS listen21_cohorts (
       id SERIAL PRIMARY KEY,
@@ -135,8 +143,8 @@ async function seed({ adminEmail, adminPasswordHash }) {
   );
   if (admins.length === 0) {
     await q(
-      `INSERT INTO listen21_users (email, password_hash, role, display_name, wall_nickname)
-       VALUES ($1, $2, 'admin', '系統管理員', $3)
+      `INSERT INTO listen21_users (email, password_hash, role, display_name, real_name, wall_nickname)
+       VALUES ($1, $2, 'admin', '系統管理員', '系統管理員', $3)
        ON CONFLICT (email) DO NOTHING;`,
       [adminEmail, adminPasswordHash, randomNickname()]
     );
