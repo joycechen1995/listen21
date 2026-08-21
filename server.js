@@ -285,7 +285,11 @@ const EQ_PERSONAS = {
   }
 };
 
+// 高情商回復功能暫時下架中（測試發現問題，先隱藏起來，之後再打開）
+const EQ_COACH_ENABLED = false;
+
 app.get("/eq-coach", requireRole("parent"), (req, res) => {
+  if (!EQ_COACH_ENABLED) return res.redirect("/parent");
   res.render("eq-coach", {
     user: req.user,
     active: "eq-coach",
@@ -295,6 +299,7 @@ app.get("/eq-coach", requireRole("parent"), (req, res) => {
 });
 
 app.post("/eq-coach/reflect", requireRole("parent"), async (req, res) => {
+  if (!EQ_COACH_ENABLED) return res.status(404).json({ error: "功能暫時下架" });
   const situation = (req.body.situation || "").trim();
   if (!situation) return res.status(400).json({ error: "請描述發生的事情" });
 
@@ -311,6 +316,7 @@ app.post("/eq-coach/reflect", requireRole("parent"), async (req, res) => {
 });
 
 app.post("/eq-coach/roleplay", requireRole("parent"), async (req, res) => {
+  if (!EQ_COACH_ENABLED) return res.status(404).json({ error: "功能暫時下架" });
   const persona = EQ_PERSONAS[req.body.persona_id];
   if (!persona) return res.status(400).json({ error: "找不到這個練習情境" });
 
