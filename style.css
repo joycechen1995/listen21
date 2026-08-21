@@ -137,5 +137,21 @@ table.plain a{text-decoration:none; font-weight:600;}
 
 .emptystate{text-align:center; padding:32px 16px; color:var(--ink-muted); font-size:0.9rem;}
 
+.rankboard{display:flex; flex-direction:column; gap:10px;}
+.rankrow{display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px 18px; box-shadow:var(--shadow);}
+.rankrow.mine{border-color:var(--primary);}
+.rank-badge{flex:0 0 auto; width:32px; height:32px; border-radius:50%; background:var(--surface-alt); color:var(--ink-muted); display:flex; align-items:center; justify-content:center; font-weight:700; font-family:'Noto Serif TC',serif; font-size:0.92rem; font-variant-numeric:tabular-nums;}
+.rankrow.top1 .rank-badge{background:#F4D06F; color:#5C4400;}
+.rankrow.top2 .rank-badge{background:#D8DEE4; color:#42505C;}
+.rankrow.top3 .rank-badge{background:#E3B08C; color:#5C3111;}
+.rank-info{flex:1; min-width:0;}
+.rank-name{font-weight:700; font-size:0.92rem; color:var(--ink); display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+.done-tag{font-size:0.64rem; font-weight:700; color:var(--accent-strong); background:var(--accent-soft); padding:2px 8px; border-radius:20px;}
+.rank-progress{display:flex; align-items:center; gap:10px; margin-top:6px;}
+.rank-bar{flex:1; max-width:160px; height:6px; border-radius:20px; background:var(--surface-alt); overflow:hidden;}
+.rank-bar-fill{height:100%; background:var(--accent); border-radius:20px;}
+.rank-days{font-size:0.74rem; color:var(--ink-muted); font-variant-numeric:tabular-nums; white-space:nowrap;}
+.rank-medal{font-size:1.3rem; flex:0 0 auto;}
+
 .muted{color:var(--ink-muted);}
 .small{font-size:0.82rem;}

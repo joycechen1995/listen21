@@ -326,6 +326,32 @@ app.post("/wall/:checkinId/reply", requireRole("parent", "coach"), async (req, r
   res.redirect("/wall");
 });
 
+app.get("/leaderboard", requireRole("parent", "coach"), async (req, res) => {
+  const cohortIds = await cohortIdsFor(req.user);
+  let entries = [];
+  if (cohortIds.length) {
+    const { rows } = await q(
+      `SELECT u.id AS parent_user_id, u.wall_nickname,
+              COUNT(ci.id)::int AS done_count,
+              MAX(ci.created_at) AS last_checkin_at
+       FROM listen21_commitments c
+       JOIN listen21_users u ON u.id = c.parent_id
+       JOIN listen21_checkins ci ON ci.commitment_id = c.id
+       WHERE u.cohort_id = ANY($1)
+       GROUP BY c.id, u.id, u.wall_nickname
+       ORDER BY done_count DESC, last_checkin_at ASC;`,
+      [cohortIds]
+    );
+    entries = rows.map((r) => ({
+      nickname: r.wall_nickname,
+      mine: req.user.role === "parent" && r.parent_user_id === req.user.id,
+      doneCount: r.done_count,
+      isComplete: r.done_count >= TOTAL_DAYS
+    }));
+  }
+  res.render("leaderboard", { user: req.user, active: "leaderboard", entries, totalDays: TOTAL_DAYS });
+});
+
 // ---------- coach ----------
 app.get("/coach", requireRole("coach"), async (req, res) => {
   const { rows: cohorts } = await q("SELECT * FROM listen21_cohorts WHERE coach_id=$1 ORDER BY created_at", [

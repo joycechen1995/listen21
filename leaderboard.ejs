@@ -1,0 +1,34 @@
+<%- include('_head', { title: '達標風雲榜' }) %>
+<%- include('_nav', { user, active: 'leaderboard' }) %>
+
+<h1 style="font-size:1.2rem; margin-bottom:6px;">達標風雲榜</h1>
+<p class="small muted" style="margin-bottom:18px;">同期學員依打卡天數排名，天數最多的人排在最前面；集滿<%= totalDays %>天會有🏆已達標標記。暱稱一樣是系統隨機配的，看不出真實身分。</p>
+
+<% if (entries.length === 0) { %>
+  <div class="card emptystate"><p>這一期還沒有人打卡，第一個開始的人會出現在這裡！</p></div>
+<% } %>
+
+<div class="rankboard">
+  <% entries.forEach(function(e, i){ const rank = i + 1; %>
+    <div class="rankrow<%= e.mine ? ' mine' : '' %><%= rank <= 3 ? ' top' + rank : '' %>">
+      <div class="rank-badge"><%= rank %></div>
+      <div class="rank-info">
+        <div class="rank-name">
+          <%= e.nickname %>
+          <% if (e.mine) { %><span class="mine-tag">你</span><% } %>
+          <% if (e.isComplete) { %><span class="done-tag">🏆 已達標</span><% } %>
+        </div>
+        <div class="rank-progress">
+          <div class="rank-bar"><div class="rank-bar-fill" style="width:<%= Math.round(e.doneCount / totalDays * 100) %>%"></div></div>
+          <span class="rank-days"><%= e.doneCount %> / <%= totalDays %> 天</span>
+        </div>
+      </div>
+      <% if (rank === 1) { %><div class="rank-medal">🥇</div>
+      <% } else if (rank === 2) { %><div class="rank-medal">🥈</div>
+      <% } else if (rank === 3) { %><div class="rank-medal">🥉</div>
+      <% } %>
+    </div>
+  <% }); %>
+</div>
+
+<%- include('_foot') %>
