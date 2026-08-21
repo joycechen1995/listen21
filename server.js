@@ -379,6 +379,16 @@ app.get("/coach", requireRole("coach"), async (req, res) => {
       const expected = Math.min(Math.max(nowDay - 1, 0), TOTAL_DAYS);
       return { ...c, stalled: c.done_count < expected };
     });
+
+    const { rows: notStarted } = await q(
+      `SELECT u.id, u.display_name, u.email, u.created_at
+       FROM listen21_users u
+       WHERE u.cohort_id=$1 AND u.role='parent'
+         AND NOT EXISTS (SELECT 1 FROM listen21_commitments c WHERE c.parent_id = u.id)
+       ORDER BY u.created_at DESC;`,
+      [cohort.id]
+    );
+    cohort.notStarted = notStarted;
   }
 
   res.render("coach", { user: req.user, active: "coach", cohorts });

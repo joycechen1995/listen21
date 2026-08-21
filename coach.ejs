@@ -40,6 +40,17 @@
         </table>
       </div>
     <% } %>
+
+    <% if (cohort.notStarted.length > 0) { %>
+      <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+        <div class="small" style="font-weight:700; color:var(--ink-muted); margin-bottom:10px;">已註冊，尚未開始 21 天旅程</div>
+        <div class="pillrow" style="margin-bottom:0;">
+          <% cohort.notStarted.forEach(function(u){ %>
+            <span class="pill"><%= u.display_name %>（<%= u.email %>）</span>
+          <% }); %>
+        </div>
+      </div>
+    <% } %>
   </div>
 <% }); %>
 
