@@ -2,7 +2,7 @@
 <%- include('_nav', { user, active: 'leaderboard' }) %>
 
 <h1 style="font-size:1.2rem; margin-bottom:6px;">達標風雲榜</h1>
-<p class="small muted" style="margin-bottom:18px;">同期學員依打卡天數排名，天數最多的人排在最前面；集滿<%= totalDays %>天會有🏆已達標標記。暱稱一樣是系統隨機配的，看不出真實身分。</p>
+<p class="small muted" style="margin-bottom:18px;">同期學員依打卡天數排名，天數最多的人排在最前面；集滿<%= totalDays %>天會有🏆已達標標記。這裡顯示的是註冊時填寫的姓名（跟動態牆的匿名暱稱不同）。</p>
 
 <% if (entries.length === 0) { %>
   <div class="card emptystate"><p>這一期還沒有人打卡，第一個開始的人會出現在這裡！</p></div>
