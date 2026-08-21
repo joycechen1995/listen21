@@ -449,6 +449,7 @@ app.get("/leaderboard", requireRole("parent", "coach", "teacher"), async (req, r
          FROM listen21_commitments c
          JOIN listen21_users u ON u.id = c.parent_id
          JOIN listen21_checkins ci ON ci.commitment_id = c.id
+           AND date_trunc('month', ci.created_at) = date_trunc('month', now())
          WHERE u.cohort_id = ANY($1)
          GROUP BY c.id, u.id, u.display_name
        ),

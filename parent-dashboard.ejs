@@ -30,17 +30,94 @@
 </div>
 
 <div class="card">
-  <div class="small" style="font-weight:700; color:var(--ink-muted); margin-bottom:10px;">21天總覽</div>
-  <div class="daygrid">
-    <% for (let i = 1; i <= 21; i++) { const isDone = doneDays.includes(i); %>
-      <div class="dcell <%= isDone ? 'done' : (i === currentDay && !windowClosed ? 'today' : '') %>">
-        <span class="daynum"><%= i %></span>
-        <span class="face"><%= isDone ? '😊' : '😴' %></span>
-      </div>
-    <% } %>
+  <div class="small" style="font-weight:700; color:var(--ink-muted); margin-bottom:10px;">打卡月曆</div>
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+    <button type="button" id="cal-prev" class="btn btn-ghost" style="width:auto; padding:6px 12px; font-size:0.82rem;">‹ 上個月</button>
+    <div id="cal-title" style="font-weight:700; font-size:0.92rem;"></div>
+    <button type="button" id="cal-next" class="btn btn-ghost" style="width:auto; padding:6px 12px; font-size:0.82rem;">下個月 ›</button>
   </div>
-  <div class="gridnote">打卡後笑臉會亮起來 😊；一天只能打卡一次，依真實日期自動往下一天走。</div>
+  <div class="calweekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+  <div class="calgrid" id="cal-grid"></div>
+  <div id="cal-detail" class="notecard" style="display:none; margin-top:14px;"></div>
+  <div class="gridnote">點選有記錄的日期，可以看到那天寫的內容；用上下個月按鈕可以回頭看之前的紀錄。</div>
 </div>
+
+<script>
+(function(){
+  var checkins = <%- JSON.stringify(checkins.map(function(c){ return { day: c.day_number, note: c.note, date: c.created_at }; })).replace(/</g, '\\u003c') %>;
+  var byDate = {};
+  checkins.forEach(function(c){
+    var d = new Date(c.date);
+    var key = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    byDate[key] = c;
+  });
+  var today = new Date();
+  var viewYear = today.getFullYear();
+  var viewMonth = today.getMonth();
+
+  function escapeHtml(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function render(){
+    document.getElementById('cal-title').textContent = viewYear + '年' + (viewMonth + 1) + '月';
+    var grid = document.getElementById('cal-grid');
+    grid.innerHTML = '';
+    var firstDay = new Date(viewYear, viewMonth, 1);
+    var startWeekday = firstDay.getDay();
+    var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+    for (var i = 0; i < startWeekday; i++) {
+      var pad = document.createElement('div');
+      pad.className = 'calcell empty';
+      grid.appendChild(pad);
+    }
+
+    for (var day = 1; day <= daysInMonth; day++) {
+      var key = viewYear + '-' + (viewMonth + 1) + '-' + day;
+      var cell = document.createElement('div');
+      cell.className = 'calcell';
+      var isToday = viewYear === today.getFullYear() && viewMonth === today.getMonth() && day === today.getDate();
+      if (isToday) cell.classList.add('today');
+      var num = document.createElement('span');
+      num.className = 'calnum';
+      num.textContent = day;
+      cell.appendChild(num);
+      var rec = byDate[key];
+      if (rec) {
+        cell.classList.add('done');
+        var face = document.createElement('span');
+        face.className = 'calface';
+        face.textContent = '😊';
+        cell.appendChild(face);
+        cell.addEventListener('click', (function(r){
+          return function(){
+            var detail = document.getElementById('cal-detail');
+            detail.style.display = '';
+            detail.innerHTML = '<span class="daychip">Day ' + r.day + '</span><div class="text" style="margin-top:8px;">' + escapeHtml(r.note) + '</div>';
+          };
+        })(rec));
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  document.getElementById('cal-prev').addEventListener('click', function(){
+    viewMonth--;
+    if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+    document.getElementById('cal-detail').style.display = 'none';
+    render();
+  });
+  document.getElementById('cal-next').addEventListener('click', function(){
+    viewMonth++;
+    if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+    document.getElementById('cal-detail').style.display = 'none';
+    render();
+  });
+
+  render();
+})();
+</script>
 
 <% if (!windowClosed) { %>
   <% if (todayCheckin) { %>

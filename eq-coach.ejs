@@ -53,7 +53,7 @@
 
 <script>
 (function(){
-  var personas = <%- JSON.stringify(personas) %>;
+  var personas = <%- JSON.stringify(personas).replace(/</g, '\\u003c') %>;
   var currentPersonaId = personas.length ? personas[0].id : null;
   var history = [];
 

@@ -104,6 +104,16 @@ a{color:var(--primary-strong);}
 .dcell.today{border-color:var(--primary); box-shadow:0 0 0 2px var(--primary) inset;}
 .gridnote{font-size:0.74rem; color:var(--ink-muted); margin-top:8px;}
 
+.calweekdays{display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-bottom:6px; text-align:center; font-size:0.72rem; color:var(--ink-muted); font-weight:700;}
+.calgrid{display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-bottom:6px;}
+.calcell{aspect-ratio:1; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; position:relative; border:1px solid var(--border); background:var(--bg);}
+.calcell.empty{border-color:transparent; background:transparent;}
+.calcell .calnum{font-size:0.68rem; font-weight:700; color:var(--ink-muted); font-variant-numeric:tabular-nums;}
+.calcell.done{background:var(--accent-soft); border-color:var(--accent); box-shadow:0 0 12px var(--accent-glow); cursor:pointer;}
+.calcell.done .calnum{color:var(--accent-strong);}
+.calcell.today{border-color:var(--primary); box-shadow:0 0 0 2px var(--primary) inset;}
+.calface{font-size:0.95rem;}
+
 .notecard{position:relative; background:var(--surface-alt); border:1px solid var(--border); border-radius:14px; padding:18px 20px 16px; overflow:hidden; margin-bottom:14px;}
 .notecard .quote-mark{position:absolute; top:2px; left:14px; font-family:'Noto Serif TC',serif; font-size:2.6rem; font-weight:700; color:var(--accent); opacity:0.35; line-height:1; pointer-events:none;}
 .notecard.mine{border-color:var(--primary);}
