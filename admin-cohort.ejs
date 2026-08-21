@@ -14,8 +14,10 @@
     </div>
   </div>
 
-  <% if (cohort.commitments.length === 0) { %>
-    <p class="small muted">這一期還沒有家長開始打卡。</p>
+  <% if (cohort.commitments.length === 0 && cohort.notStarted.length === 0) { %>
+    <p class="small muted">這個期別目前還沒有任何家長註冊，邀請碼還沒有人使用過。</p>
+  <% } else if (cohort.commitments.length === 0) { %>
+    <p class="small muted">家長已經用邀請碼註冊了，但還沒有人開始寫 21 天承諾卡（見下方名單）。</p>
   <% } else { %>
     <div style="overflow-x:auto;">
       <table class="plain">
